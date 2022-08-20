@@ -1,7 +1,7 @@
 # pythonrc
 Learning rust by building a simple python compiler
 
-## Run
+## How to run
 
 ```
 cargo run res/wilcoxon.py
