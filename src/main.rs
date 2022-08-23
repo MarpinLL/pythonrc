@@ -1,9 +1,11 @@
 use std::{env, process};
 use crate::config::Config;
 use crate::input_system::DoubleBuffer;
+use crate::lexical_analyzer::LexicalAnalyzer;
 
 mod config;
 mod input_system;
+mod lexical_analyzer;
 
 fn main() {
 
@@ -13,17 +15,20 @@ fn main() {
         process::exit(1);
     });
 
-    // Create the input buffer
-    let buffer = DoubleBuffer::new(config).unwrap_or_else(|err| {
-        eprint!("Couldn't create the input buffer: {}", err);
+    let lexical_analyzer = LexicalAnalyzer::new(config).unwrap_or_else(|err| {
+        eprint!("Problem creating the lexical analyzer: {}", err);
         process::exit(1);
     });
 
-    // Iterate through the buffer and get all characters
-    for c in buffer {
-        match c {
-            Ok(c) => print!("{}", c),
-            Err(err) => eprint!("Problem getting next character: {}", err)
-        }
+    for token in lexical_analyzer {
+        let token = match token {
+            Ok(token) => token,
+            Err(err) => {
+                eprint!("Problem reading the next token: {}", err);
+                process::exit(1);
+            }
+        };
+
+        println!("{}", token.id);
     }
 }
