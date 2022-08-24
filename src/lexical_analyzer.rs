@@ -45,11 +45,16 @@ impl Iterator for LexicalAnalyzer {
     fn next(&mut self) -> Option<Self::Item> {
         let mut token = Token { id: 0, lexeme: "".to_string() };
 
-        for c in self.double_buffer {
-            let c = match c {
-                Ok(c) => c,
-                Err(err) => return Some(Err(err))
+        loop {
+            let c = match self.double_buffer.next() {
+                None => return None,
+                Some(c) => match c {
+                    Ok(c) => c,
+                    Err(err) => return Some(Err(err))
+                }
             };
+
+            print!("{}", c);
 
             if c.is_alphabetic() {
                 self.event = Event::Letter
@@ -77,7 +82,6 @@ impl Iterator for LexicalAnalyzer {
                         Event::Underscore => {}
                         Event::NotRecognized => {
                             self.state = State::Accepted;
-                            token.id = 400;
                             break;
                         }
                     }
@@ -90,11 +94,15 @@ impl Iterator for LexicalAnalyzer {
             State::Init => None,
             State::Id => Some(Err("a")),
             State::Accepted => {
+                self.double_buffer.back();
+                token.id = 400;
+                token.lexeme = self.double_buffer.get_lexeme();
                 self.state = State::Init;
                 Some(Ok(token))
             }
             State::Rejected => {
-                self.state = State::Init
+                self.state = State::Init;
+                Some(Ok(token))
             }
         }
     }

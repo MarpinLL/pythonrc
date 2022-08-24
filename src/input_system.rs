@@ -35,14 +35,14 @@ impl DoubleBuffer {
 
     pub fn get_lexeme(&mut self) -> String {
         let mut lexeme = String::new();
-        let mut i = self.begin as isize;
+        let mut i = self.begin;
 
-        if i == self.forward{
+        if i == self.forward as usize {
             let c = self.buffer[i] as char;
             lexeme.push(c);
         }
 
-        while i != self.forward {
+        while i != self.forward as usize {
             if self.buffer[i] != 0u8 {
                 let c = self.buffer[i] as char;
                 lexeme.push(c);
@@ -60,23 +60,19 @@ impl DoubleBuffer {
 
     pub fn back(&mut self) {
         let index = if self.forward == 0 {
-            BUFFER_B_EOF - 1
+            (BUFFER_B_EOF - 1) as isize
         } else if self.forward == (BUFFER_A_EOF + 1) as isize {
-            BUFFER_A_EOF - 1
+            (BUFFER_A_EOF - 1) as isize
         } else {
-            self.forward - 1
+            self.forward - 1 as isize
         };
 
-        self.forward = index as isize;
+        self.forward = index;
     }
-}
 
-impl Iterator for DoubleBuffer {
-    type Item = Result<char, &'static str>;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    pub fn next(&mut self) -> Option<Result<char, &'static str>> {
         self.forward = self.forward + 1;
-        let c = match self.buffer[self.forward] {
+        let c = match self.buffer[self.forward as usize] {
             /*
              * If EOF (represented by the byte 0) is found, we need to find out if it's
              * the end of file or the end of one of the buffers.
@@ -120,9 +116,9 @@ impl Iterator for DoubleBuffer {
                     // We reached the end of file return None to stop the loop
                     return None;
                 }
-                self.buffer[self.forward] as char
+                self.buffer[self.forward as usize] as char
             }
-            _ => self.buffer[self.forward] as char
+            _ => self.buffer[self.forward as usize] as char
         };
 
         Some(Ok(c))
