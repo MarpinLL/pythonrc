@@ -9,8 +9,7 @@ pub struct Token {
 enum State {
     Init,
     Id,
-    Accepted,
-    Rejected,
+    Comment,
 }
 
 enum Event {
@@ -19,6 +18,8 @@ enum Event {
     Letter,
     Alpha,
     Underscore,
+    Hashtag,
+    NewLine,
     NotRecognized,
 }
 
@@ -54,55 +55,41 @@ impl Iterator for LexicalAnalyzer {
                 }
             };
 
-            print!("{}", c);
-
             if c.is_alphabetic() {
-                self.event = Event::Letter
+                self.event = Event::Letter;
             } else if c.is_alphanumeric() {
-                self.event = Event::Alpha
+                self.event = Event::Alpha;
             } else if c.is_numeric() {
-                self.event = Event::Digit
+                self.event = Event::Digit;
+            } else if c == '#' {
+                self.event = Event::Hashtag;
+            } else if c == '\n' {
+                self.event = Event::NewLine;
+            } else {
+                self.event = Event::NotRecognized;
             }
 
             match self.state {
                 State::Init => {
                     match self.event {
-                        Event::Letter => {
-                            self.state = State::Id
-                        }
-                        _ => self.state = State::Init
+                        Event::Hashtag => self.state = State::Comment,
+                        _ => self.double_buffer.reject()
                     }
                 }
-                State::Id => {
+                State::Comment => {
                     match self.event {
-                        Event::None => {}
-                        Event::Digit => {}
-                        Event::Letter => {}
-                        Event::Alpha => {}
-                        Event::Underscore => {}
-                        Event::NotRecognized => {
-                            self.state = State::Accepted;
-                            break;
+                        Event::NewLine => {
+                            self.state = State::Init;
+
+                            self.double_buffer.back();
+                            token.lexeme = self.double_buffer.get_lexeme();
+
+                            return Some(Ok(token));
                         }
+                        _ => ()
                     }
                 }
-                _ => {}
-            }
-        }
-
-        match self.state {
-            State::Init => None,
-            State::Id => Some(Err("a")),
-            State::Accepted => {
-                self.double_buffer.back();
-                token.id = 400;
-                token.lexeme = self.double_buffer.get_lexeme();
-                self.state = State::Init;
-                Some(Ok(token))
-            }
-            State::Rejected => {
-                self.state = State::Init;
-                Some(Ok(token))
+                _ => ()
             }
         }
     }

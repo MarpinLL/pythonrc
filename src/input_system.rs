@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Read;
 use crate::Config;
 
-const BUFFER_SIZE: usize = 50;
+const BUFFER_SIZE: usize = 4098;
 const BUFFER_A_EOF: usize = BUFFER_SIZE - 1;
 const BUFFER_B_EOF: usize = (2 * BUFFER_SIZE) - 1;
 
@@ -37,12 +37,7 @@ impl DoubleBuffer {
         let mut lexeme = String::new();
         let mut i = self.begin;
 
-        if i == self.forward as usize {
-            let c = self.buffer[i] as char;
-            lexeme.push(c);
-        }
-
-        while i != self.forward as usize {
+        while i != (self.forward + 1) as usize {
             if self.buffer[i] != 0u8 {
                 let c = self.buffer[i] as char;
                 lexeme.push(c);
@@ -56,6 +51,10 @@ impl DoubleBuffer {
         self.back();
 
         lexeme
+    }
+
+    pub fn reject(&mut self) {
+        self.begin = self.forward as usize;
     }
 
     pub fn back(&mut self) {

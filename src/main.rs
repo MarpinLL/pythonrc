@@ -29,6 +29,6 @@ fn main() {
             }
         };
 
-        println!("{}", token.id);
+        println!("<{}, {}>", token.id, token.lexeme);
     }
 }
