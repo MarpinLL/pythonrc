@@ -2,10 +2,12 @@ use std::{env, process};
 use crate::config::Config;
 use crate::input_system::DoubleBuffer;
 use crate::lexical_analyzer::LexicalAnalyzer;
+use crate::token::Token;
 
 mod config;
 mod input_system;
 mod lexical_analyzer;
+mod token;
 
 fn main() {
 
@@ -29,6 +31,10 @@ fn main() {
             }
         };
 
-        println!("<{}, {}>", token.id, token.lexeme);
+        match token {
+            Token::Id(ref lexeme) => {
+                println!("<{}, {}>", token.value(), lexeme)
+            }
+        }
     }
 }

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Read;
 use crate::Config;
 
-const BUFFER_SIZE: usize = 4098;
+const BUFFER_SIZE: usize = 4096;
 const BUFFER_A_EOF: usize = BUFFER_SIZE - 1;
 const BUFFER_B_EOF: usize = (2 * BUFFER_SIZE) - 1;
 
@@ -43,7 +43,7 @@ impl DoubleBuffer {
                 lexeme.push(c);
             }
 
-            i = (i + 1) % BUFFER_SIZE;
+            i = (i + 1) % (2 * BUFFER_SIZE);
         }
 
         self.next();
@@ -54,7 +54,9 @@ impl DoubleBuffer {
     }
 
     pub fn reject(&mut self) {
+        self.next();
         self.begin = self.forward as usize;
+        self.back();
     }
 
     pub fn back(&mut self) {

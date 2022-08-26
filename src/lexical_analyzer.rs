@@ -1,22 +1,18 @@
 use crate::{Config, DoubleBuffer};
+use crate::token::Token;
 
-
-pub struct Token {
-    pub id: u32,
-    pub lexeme: String,
-}
-
+#[derive(Debug)]
 enum State {
     Init,
     Id,
     Comment,
 }
 
+#[derive(Debug)]
 enum Event {
     None,
     Digit,
     Letter,
-    Alpha,
     Underscore,
     Hashtag,
     NewLine,
@@ -44,8 +40,6 @@ impl Iterator for LexicalAnalyzer {
     type Item = Result<Token, &'static str>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut token = Token { id: 0, lexeme: "".to_string() };
-
         loop {
             let c = match self.double_buffer.next() {
                 None => return None,
@@ -57,22 +51,26 @@ impl Iterator for LexicalAnalyzer {
 
             if c.is_alphabetic() {
                 self.event = Event::Letter;
-            } else if c.is_alphanumeric() {
-                self.event = Event::Alpha;
             } else if c.is_numeric() {
                 self.event = Event::Digit;
             } else if c == '#' {
                 self.event = Event::Hashtag;
             } else if c == '\n' {
                 self.event = Event::NewLine;
+            } else if c == '_' {
+                self.event = Event::Underscore;
             } else {
                 self.event = Event::NotRecognized;
             }
+
+
+            // println!("{:?} : {:?} : {}", self.state, self.event, c);
 
             match self.state {
                 State::Init => {
                     match self.event {
                         Event::Hashtag => self.state = State::Comment,
+                        Event::Letter => self.state = State::Id,
                         _ => self.double_buffer.reject()
                     }
                 }
@@ -80,16 +78,25 @@ impl Iterator for LexicalAnalyzer {
                     match self.event {
                         Event::NewLine => {
                             self.state = State::Init;
-
-                            self.double_buffer.back();
-                            token.lexeme = self.double_buffer.get_lexeme();
-
-                            return Some(Ok(token));
+                            self.double_buffer.reject();
                         }
                         _ => ()
                     }
                 }
-                _ => ()
+                State::Id => {
+                    match self.event {
+                        Event::Digit | Event::Letter | Event::Underscore => (),
+                        _ => {
+                            self.state = State::Init;
+
+                            self.double_buffer.back();
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Id(lexeme);
+
+                            return Some(Ok(token));
+                        }
+                    }
+                }
             }
         }
     }
