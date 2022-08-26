@@ -33,7 +33,15 @@ fn main() {
 
         match token {
             Token::Id(ref lexeme) => {
-                println!("<{}, {}>", token.value(), lexeme)
+                println!("<{}, {}>", token.value(), lexeme);
+            }
+
+            Token::Operator(ref lexeme) => {
+                println!("<{}, {}>", token.value(), lexeme);
+            }
+
+            Token::Delimiter(ref lexeme) => {
+                println!("<{}, {}>", token.value(), lexeme);
             }
         }
     }

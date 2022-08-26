@@ -1,14 +1,16 @@
 use crate::{Config, DoubleBuffer};
 use crate::token::Token;
 
-#[derive(Debug)]
 enum State {
     Init,
     Id,
     Comment,
+    DelimiterEqual,
+    OperatorPlus,
+    OperatorAsterisk,
+    OperatorLess,
 }
 
-#[derive(Debug)]
 enum Event {
     None,
     Digit,
@@ -16,6 +18,23 @@ enum Event {
     Underscore,
     Hashtag,
     NewLine,
+    DoubleQuotes,
+    Plus,
+    Minus,
+    Asterisk,
+    Slash,
+    Less,
+    Greater,
+    OpeningParenthesis,
+    ClosingParenthesis,
+    OpeningSquareBracket,
+    ClosingSquareBracket,
+    OpeningCurlyBracket,
+    ClosingCurlyBracket,
+    Coma,
+    Colon,
+    Dot,
+    Equal,
     NotRecognized,
 }
 
@@ -59,18 +78,68 @@ impl Iterator for LexicalAnalyzer {
                 self.event = Event::NewLine;
             } else if c == '_' {
                 self.event = Event::Underscore;
+            } else if c == '"' {
+                self.event = Event::DoubleQuotes;
+            } else if c == '+' {
+                self.event = Event::Plus;
+            } else if c == '-' {
+                self.event = Event::Minus;
+            } else if c == '*' {
+                self.event = Event::Asterisk;
+            } else if c == '/' {
+                self.event = Event::Slash;
+            } else if c == '<' {
+                self.event = Event::Less;
+            } else if c == '>' {
+                self.event = Event::Greater;
+            } else if c == '(' {
+                self.event = Event::OpeningParenthesis;
+            } else if c == ')' {
+                self.event = Event::ClosingParenthesis;
+            } else if c == '[' {
+                self.event = Event::OpeningSquareBracket;
+            } else if c == ']' {
+                self.event = Event::ClosingSquareBracket;
+            } else if c == '{' {
+                self.event = Event::OpeningCurlyBracket;
+            } else if c == '}' {
+                self.event = Event::ClosingCurlyBracket;
+            } else if c == ',' {
+                self.event = Event::Coma;
+            } else if c == ':' {
+                self.event = Event::Colon;
+            } else if c == '.' {
+                self.event = Event::Dot;
+            } else if c == '=' {
+                self.event = Event::Equal;
             } else {
                 self.event = Event::NotRecognized;
             }
-
-
-            // println!("{:?} : {:?} : {}", self.state, self.event, c);
 
             match self.state {
                 State::Init => {
                     match self.event {
                         Event::Hashtag => self.state = State::Comment,
                         Event::Letter => self.state = State::Id,
+                        Event::Plus => self.state = State::OperatorPlus,
+                        Event::Asterisk => self.state = State::OperatorAsterisk,
+                        Event::Less => self.state = State::OperatorLess,
+                        Event::Equal => self.state = State::DelimiterEqual,
+                        Event::Minus | Event::Slash | Event::Greater => {
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+                        Event::OpeningCurlyBracket | Event::OpeningSquareBracket |
+                        Event::OpeningParenthesis | Event::ClosingParenthesis |
+                        Event::ClosingCurlyBracket | Event::ClosingSquareBracket |
+                        Event::Coma | Event::Colon | Event::Dot => {
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Delimiter(lexeme);
+
+                            return Some(Ok(token));
+                        }
                         _ => self.double_buffer.reject()
                     }
                 }
@@ -97,6 +166,97 @@ impl Iterator for LexicalAnalyzer {
                         }
                     }
                 }
+                State::OperatorPlus => {
+                    match self.event {
+                        Event::Equal => {
+                            self.state = State::Init;
+
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Delimiter(lexeme);
+
+                            return Some(Ok(token));
+                        }
+
+                        _ => {
+                            self.state = State::Init;
+
+                            self.double_buffer.back();
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+                    }
+                }
+                State::OperatorAsterisk => {
+                    match self.event {
+                        Event::Asterisk => {
+                            self.state = State::Init;
+
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+
+                        _ => {
+                            self.state = State::Init;
+
+                            self.double_buffer.back();
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+                    }
+                }
+                State::OperatorLess => {
+                    match self.event {
+                        Event::Equal => {
+                            self.state = State::Init;
+
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+
+                        _ => {
+                            self.state = State::Init;
+
+                            self.double_buffer.back();
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+                    }
+                }
+
+                State::DelimiterEqual => {
+                    match self.event {
+                        Event::Equal => {
+                            self.state = State::Init;
+
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Operator(lexeme);
+
+                            return Some(Ok(token));
+                        }
+
+                        _ => {
+                            self.state = State::Init;
+
+                            self.double_buffer.back();
+                            let lexeme = self.double_buffer.get_lexeme();
+                            let token = Token::Delimiter(lexeme);
+
+                            return Some(Ok(token));
+                        }
+                    }
+                }
+
+                _ => {}
             }
         }
     }

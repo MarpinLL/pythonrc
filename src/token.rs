@@ -1,12 +1,20 @@
 pub enum Token {
-    Id(String)
+    Id(String),
+    Operator(String),
+    Delimiter(String),
 }
 
 impl Token {
-    pub fn value(&self) -> u32 {
+    pub fn value(&self) -> &str {
         match *self {
             Token::Id(_) => {
-                400
+                "Identifier"
+            }
+            Token::Operator(_) => {
+                "Operator"
+            }
+            Token::Delimiter(_) => {
+                "Delimiter"
             }
         }
     }
