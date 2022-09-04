@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Read;
 use crate::Config;
 
-const BUFFER_SIZE: usize = 4096;
+const BUFFER_SIZE: usize = 30;
 const BUFFER_A_EOF: usize = BUFFER_SIZE - 1;
 const BUFFER_B_EOF: usize = (2 * BUFFER_SIZE) - 1;
 
@@ -46,7 +46,7 @@ impl DoubleBuffer {
             i = (i + 1) % (2 * BUFFER_SIZE);
         }
 
-        self.next();
+        self.forward();
         self.begin = self.forward as usize;
         self.back();
 
@@ -54,7 +54,7 @@ impl DoubleBuffer {
     }
 
     pub fn reject(&mut self) {
-        self.next();
+        self.forward();
         self.begin = self.forward as usize;
         self.back();
     }
@@ -69,6 +69,16 @@ impl DoubleBuffer {
         };
 
         self.forward = index;
+    }
+
+    fn forward(&mut self) {
+        if self.forward as usize == BUFFER_A_EOF - 1 {
+            self.forward = self.forward + 2;
+        } else if self.forward as usize == BUFFER_B_EOF - 1 {
+            self.forward = 0;
+        } else {
+            self.forward = self.forward + 1;
+        }
     }
 
     pub fn next(&mut self) -> Option<Result<char, &'static str>> {

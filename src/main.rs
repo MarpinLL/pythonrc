@@ -36,11 +36,23 @@ fn main() {
                 println!("<{}, {}>", token.value(), lexeme);
             }
 
+            Token::String(ref lexeme) => {
+                println!("<{}, {}>", token.value(), lexeme);
+            }
+
             Token::Operator(ref lexeme) => {
                 println!("<{}, {}>", token.value(), lexeme);
             }
 
             Token::Delimiter(ref lexeme) => {
+                println!("<{}, {}>", token.value(), lexeme);
+            }
+
+            Token::Integer(ref lexeme) => {
+                println!("<{}, {}>", token.value(), lexeme);
+            }
+
+            Token::Float(ref lexeme) => {
                 println!("<{}, {}>", token.value(), lexeme);
             }
         }
