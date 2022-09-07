@@ -483,7 +483,9 @@ impl Iterator for LexicalAnalyzer<'_> {
                 match self.symbol_table.get(&lexeme) {
                     None => {
                         self.symbol_table.insert(lexeme.clone(), Token::Id(lexeme.clone()));
-                        Some(Ok(self.symbol_table.get(&lexeme).unwrap().clone()))
+                        let token = self.symbol_table.get(&lexeme).unwrap().clone();
+
+                        Some(Ok(token))
                     }
                     Some(token) => Some(Ok(token.clone()))
                 }
