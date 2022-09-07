@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Read;
 use crate::Config;
 
-const BUFFER_SIZE: usize = 30;
+const BUFFER_SIZE: usize = 100;
 const BUFFER_A_EOF: usize = BUFFER_SIZE - 1;
 const BUFFER_B_EOF: usize = (2 * BUFFER_SIZE) - 1;
 

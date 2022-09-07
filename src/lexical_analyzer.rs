@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::{Config, DoubleBuffer};
 use crate::token::Token;
 
@@ -89,26 +90,27 @@ enum Event {
     Other,
 }
 
-pub struct LexicalAnalyzer {
+pub struct LexicalAnalyzer<'a> {
     state: State,
     event: Event,
     double_buffer: DoubleBuffer,
+    symbol_table: &'a mut HashMap<String, Token>,
     line_counter: u32,
 }
 
-impl LexicalAnalyzer {
-    pub fn new(config: Config) -> Result<LexicalAnalyzer, &'static str> {
+impl LexicalAnalyzer<'_> {
+    pub fn new<'a>(config: Config, symbol_table: &'a mut HashMap<String, Token>) -> Result<LexicalAnalyzer, &'static str> {
         let state = State::Init;
         let event = Event::None;
         let double_buffer = DoubleBuffer::new(config)?;
         let line_counter = 1;
 
 
-        Ok(LexicalAnalyzer { state, event, double_buffer, line_counter })
+        Ok(LexicalAnalyzer { state, event, double_buffer, symbol_table, line_counter })
     }
 }
 
-impl Iterator for LexicalAnalyzer {
+impl Iterator for LexicalAnalyzer<'_> {
     type Item = Result<Token, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -477,7 +479,15 @@ impl Iterator for LexicalAnalyzer {
 
         // Return token
         let token = match self.state {
-            State::Id => Some(Ok(Token::Id(lexeme))),
+            State::Id => {
+                match self.symbol_table.get(&lexeme) {
+                    None => {
+                        self.symbol_table.insert(lexeme.clone(), Token::Id(lexeme.clone()));
+                        Some(Ok(self.symbol_table.get(&lexeme).unwrap().clone()))
+                    }
+                    Some(token) => Some(Ok(token.clone()))
+                }
+            }
             State::String(_) => Some(Ok(Token::String(lexeme))),
             State::Integer(_) => Some(Ok(Token::Integer(lexeme))),
             State::Float(_) => Some(Ok(Token::Float(lexeme))),
